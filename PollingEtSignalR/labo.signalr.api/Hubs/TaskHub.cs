@@ -15,18 +15,24 @@ namespace labo.signalr.api.Hubs
         {
             _context = context;
         }
+
+        static int nombreUser = 0;
         public override async Task OnConnectedAsync()
         {
             base.OnConnectedAsync();
             List<UselessTask> taskList = await _context.UselessTasks.ToListAsync();
             // TODO: Ajouter votre logique
+            nombreUser++;
             await Clients.Caller.SendAsync("TaskList", taskList);
+            await Clients.All.SendAsync("UserCount", nombreUser);
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             base.OnDisconnectedAsync(exception);
             // TODO: Ajouter votre logique
+            nombreUser--;
+            await Clients.All.SendAsync("UserCount", nombreUser);
         }
 
         public async Task AddTask(string taskText)
@@ -39,8 +45,24 @@ namespace labo.signalr.api.Hubs
             };
             _context.UselessTasks.Add(uselessTask);
             await _context.SaveChangesAsync();
+            
 
-            await Clients.All.SendAsync("TaskList", _context.UselessTasks.ToListAsync());
+            List<UselessTask> tasks = await _context.UselessTasks.ToListAsync();
+
+            await Clients.All.SendAsync("TaskList", tasks);
+        }
+
+        public async Task CompleteTask(int id)
+        {
+            UselessTask? task = await _context.FindAsync<UselessTask>(id);
+            if (task != null)
+            {
+                task.Completed = true;
+                await _context.SaveChangesAsync();
+            }
+
+            List<UselessTask> tasks = await _context.UselessTasks.ToListAsync();
+            await Clients.All.SendAsync("TaskList", tasks);
         }
     }
 }

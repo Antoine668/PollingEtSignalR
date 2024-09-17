@@ -28,6 +28,10 @@ export class SignalrComponent implements OnInit {
     this.hubConnection!.on('TaskList', (data) => {
       this.tasks = data;
     });
+
+    this.hubConnection!.on('UserCount', (data) => {
+      this.usercount = data;
+    })
     // TODO On doit ensuite se connecter
     this.hubConnection
       .start()
@@ -39,6 +43,7 @@ export class SignalrComponent implements OnInit {
 
   complete(id: number) {
     // TODO On invoke la méthode pour compléter une tâche sur le serveur
+    this.hubConnection!.invoke('CompleteTask', id);
   }
 
   addtask() {
